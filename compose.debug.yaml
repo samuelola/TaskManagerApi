@@ -1,0 +1,6 @@
+services:
+  taskapi:
+    image: taskapi
+    build:
+      context: .
+      dockerfile: ./Dockerfile

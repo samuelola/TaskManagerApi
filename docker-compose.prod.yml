@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  app:
+    image: sammy48/task-manager-api:latest
+    container_name: laravel_app
+    restart: always
+    env_file:
+      - .env.prod
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app_network
+
+  webserver:
+    image: nginx:stable-alpine
+    container_name: nginx_server
+    restart: always
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - app_network
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - app_network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - app_network
+
+  queue:
+    image: sammy48/task-manager-api:latest
+    command: php artisan queue:work --sleep=3 --tries=3
+    restart: always
+    env_file:
+      - .env.prod
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app_network
+
+networks:
+  app_network:
+
+volumes:
+  dbdata:
